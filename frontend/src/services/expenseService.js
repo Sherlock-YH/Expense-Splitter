@@ -1,6 +1,28 @@
-const API_BASE = "http://localhost:8080/api/expenses"; // Spring Boot default port
+const API_BASE = "http://localhost:8080/api/expenses";
 
-// ✅ Add a new expense
+async function handleResponse(response) {
+  if (!response.ok) {
+    let errorMessage = "An error occurred";
+    try {
+      const errorData = await response.json();
+      if (errorData.error) {
+        errorMessage = errorData.error;
+      } else if (errorData.description || errorData.amount || errorData.paidBy) {
+        errorMessage = Object.values(errorData).join(", ");
+      }
+    } catch {
+      errorMessage = await response.text() || `HTTP ${response.status}: ${response.statusText}`;
+    }
+    throw new Error(errorMessage);
+  }
+  
+  if (response.status === 204) {
+    return null;
+  }
+  
+  return response.json();
+}
+
 export async function addExpense(expense) {
   try {
     const response = await fetch(API_BASE, {
@@ -8,40 +30,49 @@ export async function addExpense(expense) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(expense),
     });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || "Failed to add expense");
-    }
-    return response.json();
+    return await handleResponse(response);
   } catch (err) {
     console.error("Add expense error:", err);
-    alert("Error connecting to backend: " + err.message);
+    throw err;
   }
 }
 
-// ✅ Get expenses by group
 export async function getExpensesByGroup(groupId) {
-  const response = await fetch(`${API_BASE}?groupId=${groupId}`);
-  if (!response.ok) throw new Error("Failed to fetch expenses");
-  return response.json();
+  try {
+    const response = await fetch(`${API_BASE}?groupId=${groupId}`);
+    return await handleResponse(response);
+  } catch (err) {
+    console.error("Fetch expenses error:", err);
+    return [];
+  }
 }
 
-// ✅ Delete expense
 export async function deleteExpense(id) {
-  const response = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
-  if (!response.ok) throw new Error("Failed to delete expense");
+  try {
+    const response = await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+    return await handleResponse(response);
+  } catch (err) {
+    console.error("Delete expense error:", err);
+    throw err;
+  }
 }
 
-// ✅ Get total amount for a group
 export async function getTotalByGroup(groupId) {
-  const response = await fetch(`${API_BASE}/total?groupId=${groupId}`);
-  if (!response.ok) throw new Error("Failed to fetch total");
-  return response.json();
+  try {
+    const response = await fetch(`${API_BASE}/total?groupId=${groupId}`);
+    return await handleResponse(response);
+  } catch (err) {
+    console.error("Fetch total error:", err);
+    return 0;
+  }
 }
 
-// ✅ Split expense
 export async function splitExpense(groupId, people) {
-  const response = await fetch(`${API_BASE}/split?groupId=${groupId}&people=${people}`);
-  if (!response.ok) throw new Error("Failed to split expense");
-  return response.json();
+  try {
+    const response = await fetch(`${API_BASE}/split?groupId=${groupId}&people=${people}`);
+    return await handleResponse(response);
+  } catch (err) {
+    console.error("Split expense error:", err);
+    return 0;
+  }
 }

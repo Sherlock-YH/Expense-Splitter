@@ -1,35 +1,56 @@
-    package com.sherlock.expensesplitter.model;
+package com.sherlock.expensesplitter.model;
 
-    public class Expense {
-        private Long id;
-        private String description;
-        private double amount;
-        private String paidBy;
-        private Long groupId;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
-        public Expense() {}
+@Entity
+@Table(name = "expenses")
+public class Expense {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-        public Expense(Long id, String description, double amount, String paidBy, Long groupId) {
-            this.id = id;
-            this.description = description;
-            this.amount = amount;
-            this.paidBy = paidBy;
-            this.groupId = groupId;
-        }
+    @NotBlank(message = "Description cannot be empty")
+    @Column(nullable = false)
+    private String description;
 
-        // Getters and setters
-        public Long getId() { return id; }
-        public void setId(Long id) { this.id = id; }
+    @Positive(message = "Amount must be positive")
+    @Column(nullable = false)
+    private double amount;
 
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
+    @NotBlank(message = "PaidBy cannot be empty")
+    @Column(nullable = false)
+    private String paidBy;
 
-        public double getAmount() { return amount; }
-        public void setAmount(double amount) { this.amount = amount; }
+    @NotNull(message = "GroupId cannot be null")
+    @Column(nullable = false)
+    private Long groupId;
 
-        public String getPaidBy() { return paidBy; }
-        public void setPaidBy(String paidBy) { this.paidBy = paidBy; }
+    public Expense() {}
 
-        public Long getGroupId() { return groupId; }
-        public void setGroupId(Long groupId) { this.groupId = groupId; }
+    public Expense(Long id, String description, double amount, String paidBy, Long groupId) {
+        this.id = id;
+        this.description = description;
+        this.amount = amount;
+        this.paidBy = paidBy;
+        this.groupId = groupId;
     }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public double getAmount() { return amount; }
+    public void setAmount(double amount) { this.amount = amount; }
+
+    public String getPaidBy() { return paidBy; }
+    public void setPaidBy(String paidBy) { this.paidBy = paidBy; }
+
+    public Long getGroupId() { return groupId; }
+    public void setGroupId(Long groupId) { this.groupId = groupId; }
+}

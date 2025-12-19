@@ -1,20 +1,15 @@
 package com.sherlock.expensesplitter.controller;
 
+import com.sherlock.expensesplitter.exception.ResourceNotFoundException;
 import com.sherlock.expensesplitter.model.Expense;
 import com.sherlock.expensesplitter.service.ExpenseService;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
 
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
@@ -27,34 +22,39 @@ public class ExpenseController {
         this.service = service;
     }
 
-    // Add a new expense
     @PostMapping
-    public Expense addExpense(@RequestBody Expense expense) {
-        return service.addExpense(expense);
+    public ResponseEntity<Expense> addExpense(@Valid @RequestBody Expense expense) {
+        Expense created = service.addExpense(expense);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // Get all expenses
     @GetMapping
-    public List<Expense> getExpensesByGroup(@RequestParam Long groupId) {
-        return service.getExpensesByGroup(groupId);
+    public ResponseEntity<List<Expense>> getExpensesByGroup(@RequestParam Long groupId) {
+        List<Expense> expenses = service.getExpensesByGroup(groupId);
+        return ResponseEntity.ok(expenses);
     }
 
-    // Delete expense by ID
     @DeleteMapping("/{id}")
-    public void deleteExpense(@PathVariable Long id) {
-        service.deleteExpense(id);
+    public ResponseEntity<Void> deleteExpense(@PathVariable Long id) {
+        boolean deleted = service.deleteExpense(id);
+        if (!deleted) {
+            throw new ResourceNotFoundException("Expense with id " + id + " not found");
+        }
+        return ResponseEntity.noContent().build();
     }
 
-    // Get total expenses
     @GetMapping("/total")
-    public double getTotal(@RequestParam Long groupId) {
-        return service.getTotalExpensesByGroup(groupId);
+    public ResponseEntity<Double> getTotal(@RequestParam Long groupId) {
+        double total = service.getTotalExpensesByGroup(groupId);
+        return ResponseEntity.ok(total);
     }
 
-    // Split a total amount among N people
     @GetMapping("/split")
-    public double splitExpense( @RequestParam Long groupId, @RequestParam int people) {
-        return service.splitExpense(groupId, people);
+    public ResponseEntity<Double> splitExpense(@RequestParam Long groupId, @RequestParam int people) {
+        if (people <= 0) {
+            throw new IllegalArgumentException("Number of people must be positive");
+        }
+        double splitAmount = service.splitExpense(groupId, people);
+        return ResponseEntity.ok(splitAmount);
     }
-
 }

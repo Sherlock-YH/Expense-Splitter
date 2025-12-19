@@ -1,56 +1,55 @@
 package com.sherlock.expensesplitter.service;
 
 import com.sherlock.expensesplitter.model.Expense;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import com.sherlock.expensesplitter.repository.ExpenseRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
+@Transactional
 public class ExpenseService {
 
-    private final List<Expense> expenses = new ArrayList<>();
-    private final AtomicLong idCounter = new AtomicLong();
+    private final ExpenseRepository repository;
 
-    // Add a new expense
+    public ExpenseService(ExpenseRepository repository) {
+        this.repository = repository;
+    }
+
     public Expense addExpense(Expense expense) {
-        expense.setId(idCounter.incrementAndGet());
-        expenses.add(expense);
-        return expense;
+        return repository.save(expense);
     }
 
-    // Get all expenses
     public List<Expense> getAllExpenses() {
-        return expenses;
+        return repository.findAll();
     }
 
-    // Delete an expense by ID
     public boolean deleteExpense(Long id) {
-        return expenses.removeIf(e -> e.getId().equals(id));
+        if (repository.existsById(id)) {
+            repository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 
-    // Calculate total expenses
     public double getTotalExpensesByGroup(Long groupId) {
-        return expenses.stream().filter(e -> e.getGroupId().equals(groupId)).mapToDouble(Expense::getAmount).sum();
-    }
-
-    // Split total expenses of a specific group among N people
-    public double splitExpense(Long groupId, int people) {
-        if (people <= 0)
-            return 0;
-
-        // Sum only expenses belonging to the group
-        double totalAmount = expenses.stream()
-                .filter(e -> e.getGroupId().equals(groupId))
+        return repository.findByGroupId(groupId)
+                .stream()
                 .mapToDouble(Expense::getAmount)
                 .sum();
+    }
 
+    public double splitExpense(Long groupId, int people) {
+        if (people <= 0) {
+            throw new IllegalArgumentException("Number of people must be positive");
+        }
+
+        double totalAmount = getTotalExpensesByGroup(groupId);
         return totalAmount / people;
     }
 
     public List<Expense> getExpensesByGroup(Long groupId) {
-        return expenses.stream()
-                .filter(e -> e.getGroupId().equals(groupId))
-                .toList();
+        return repository.findByGroupId(groupId);
     }
 }
